@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>FamilyHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Home, Users, CheckCircle } = lucide;
+
+        function App() {
+            const [name, setName] = useState(localStorage.getItem('user_name') || '');
+            const [isLogged, setIsLogged] = useState(!!name);
+
+            useEffect(() => { lucide.createIcons(); }, [isLogged]);
+
+            if (!isLogged) {
+                return (
+                    <div className="h-screen bg-blue-600 flex items-center justify-center p-6 text-center">
+                        <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl space-y-6">
+                            <h1 className="text-3xl font-black text-slate-800">FamilyHub</h1>
+                            <input 
+                                type="text" 
+                                placeholder="Seu nome" 
+                                className="w-full bg-slate-100 p-4 rounded-2xl outline-none font-bold text-center"
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            <button 
+                                onClick={() => { localStorage.setItem('user_name', name); setIsLogged(true); }}
+                                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black"
+                            >Entrar</button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-20">
+                    <header className="bg-white p-4 border-b flex justify-between items-center">
+                        <h1 className="font-black text-blue-600">FamilyHub</h1>
+                        <span className="text-xs font-bold text-slate-400 uppercase">{name}</span>
+                    </header>
+                    <main className="p-6">
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                            <h2 className="font-bold text-slate-800">Olá, Família!</h2>
+                            <p className="text-sm text-slate-500">O vosso novo centro de organização está ativo.</p>
+                        </div>
+                    </main>
+                    <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around py-4 safe-bottom">
+                        <Home className="text-blue-600" />
+                        <Users className="text-slate-300" />
+                    </nav>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
