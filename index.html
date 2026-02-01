@@ -5,129 +5,390 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>FamilyHub</title>
+    <title>FamilyHub Premium</title>
     
-    <!-- Bibliotecas Essenciais -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
         body { 
             -webkit-tap-highlight-color: transparent; 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
             background-color: #f8fafc;
+            user-select: none;
+            overflow-x: hidden;
         }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Estilo Premium dos Botões de Navegação */
+        .nav-btn { color: #cbd5e1; transition: all 0.2s ease; }
+        .nav-btn.active { color: #2563eb; transform: translateY(-2px); }
+        .nav-btn.active i { filter: drop-shadow(0 0 8px rgba(37, 99, 235, 0.3)); }
+
+        .page { display: none; padding-bottom: 140px; }
+        .page.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding-top: calc(15px + var(--safe-top));
+        }
+
+        .nav-bar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding-bottom: calc(15px + var(--safe-bottom));
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.03);
+        }
+
+        .premium-card {
+            background: white;
+            border: 1px solid rgba(241, 245, 249, 1);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.04);
+            border-radius: 30px;
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .task-checked { background: #2563eb; border-color: #2563eb; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="antialiased text-slate-900">
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <!-- Tela de Login Premium -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-white flex items-center justify-center p-8 hidden">
+        <div class="w-full max-w-sm text-center space-y-8">
+            <div class="w-24 h-24 bg-blue-600 text-white rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-blue-200">
+                <i data-lucide="home" class="w-12 h-12"></i>
+            </div>
+            <div>
+                <h1 class="text-4xl font-black text-slate-800 tracking-tight">FamilyHub</h1>
+                <p class="text-slate-400 font-medium mt-2">Conectando sua família</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="user-input" placeholder="Seu nome" 
+                    class="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-3xl p-5 outline-none font-bold text-center text-lg transition-all shadow-sm">
+                <button onclick="login()" class="w-full bg-blue-600 text-white py-5 rounded-3xl font-black shadow-xl shadow-blue-100 active:scale-95 transition-all text-lg tracking-wide">
+                    ENTRAR
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // Ícones em SVG para evitar dependência de bibliotecas externas que podem falhar no mobile
-        const IconHome = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
-        const IconUsers = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-        const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    <!-- App Principal -->
+    <div id="main-app" class="hidden">
+        
+        <header class="glass-header sticky top-0 border-b border-slate-50 flex justify-between items-center px-6 pb-5 z-40">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg shadow-blue-100">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <h1 class="font-black text-slate-800 text-xl tracking-tighter">FamilyHub</h1>
+            </div>
+            <div id="user-badge" class="w-10 h-10 bg-slate-100 border-2 border-white rounded-2xl flex items-center justify-center text-blue-600 font-black shadow-sm uppercase">?</div>
+        </header>
 
-        function App() {
-            const [user, setUser] = useState(localStorage.getItem('family_user') || '');
-            const [view, setView] = useState(user ? 'dashboard' : 'login');
-            const [tempName, setTempName] = useState('');
-
-            const handleLogin = () => {
-                if (tempName.trim()) {
-                    localStorage.setItem('family_user', tempName);
-                    setUser(tempName);
-                    setView('dashboard');
-                }
-            };
-
-            if (view === 'login') {
-                return (
-                    <div className="h-screen bg-blue-600 flex items-center justify-center p-6 fade-in">
-                        <div className="bg-white w-full max-w-sm rounded-[40px] p-10 shadow-2xl text-center">
-                            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                                <IconHome />
-                            </div>
-                            <h2 className="text-2xl font-black text-slate-800 mb-2">FamilyHub</h2>
-                            <p className="text-slate-400 text-sm mb-8">Digite seu nome para começar</p>
-                            <input 
-                                type="text" 
-                                placeholder="Seu nome (ex: Pai)" 
-                                className="w-full bg-slate-100 border-none rounded-2xl p-4 mb-4 outline-none font-bold text-center text-lg"
-                                onChange={(e) => setTempName(e.target.value)}
-                            />
-                            <button 
-                                onClick={handleLogin}
-                                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg active:scale-95 transition-all"
-                            >
-                                ENTRAR
-                            </button>
+        <main class="p-6 max-w-md mx-auto">
+            
+            <!-- PÁGINA: HOME / ROTINA -->
+            <section id="page-home" class="page active space-y-8">
+                <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-8 rounded-[40px] text-white shadow-2xl shadow-blue-200">
+                    <p class="text-xs font-bold opacity-70 uppercase tracking-[0.2em]">Dashboard</p>
+                    <h2 class="text-3xl font-black mt-1 leading-tight">Olá, <span class="display-name">...</span>!</h2>
+                    <div class="mt-8 flex gap-4">
+                        <div class="bg-white/10 p-4 rounded-2xl flex-1 backdrop-blur-md border border-white/10">
+                            <p class="text-[10px] font-black uppercase opacity-60">Tarefas</p>
+                            <p id="stat-tasks" class="text-2xl font-black">0</p>
+                        </div>
+                        <div class="bg-white/10 p-4 rounded-2xl flex-1 backdrop-blur-md border border-white/10">
+                            <p class="text-[10px] font-black uppercase opacity-60">Gastos</p>
+                            <p class="text-2xl font-black text-sm mt-1 font-bold">R$ 1.250</p>
                         </div>
                     </div>
-                );
-            }
+                </div>
 
-            return (
-                <div className="min-h-screen bg-slate-50 pb-24 fade-in">
-                    <header className="bg-white p-4 sticky top-0 border-b flex justify-between items-center z-10 shadow-sm">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-blue-600 p-1.5 rounded-lg text-white"><IconHome /></div>
-                            <h1 className="font-black text-slate-800 tracking-tighter">FamilyHub</h1>
-                        </div>
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-black text-xs">
-                            {user[0]?.toUpperCase()}
-                        </div>
-                    </header>
-
-                    <main className="p-4 space-y-6">
-                        <div className="bg-blue-600 p-6 rounded-[32px] text-white shadow-xl shadow-blue-100">
-                            <h2 className="font-bold text-lg">Olá, {user}!</h2>
-                            <p className="text-sm opacity-80">Sua família está pronta para se organizar.</p>
-                        </div>
-
-                        <div className="space-y-3">
-                            <h3 className="font-black text-slate-800 px-1">Atividades Recentes</h3>
-                            <div className="bg-white p-5 rounded-3xl border border-slate-100 flex items-center gap-4">
-                                <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
-                                <div className="flex-1">
-                                    <p className="font-bold text-slate-700 text-sm">Bem-vindo ao App!</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase">SISTEMA • GERAL</p>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-
-                    <nav className="fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t flex justify-around py-4 z-20 safe-bottom">
-                        <button onClick={() => setView('dashboard')} className={`flex flex-col items-center gap-1 ${view === 'dashboard' ? 'text-blue-600' : 'text-slate-400'}`}>
-                            <IconHome />
-                            <span className="text-[9px] font-black uppercase">Home</span>
-                        </button>
-                        <button onClick={() => setView('settings')} className={`flex flex-col items-center gap-1 ${view === 'settings' ? 'text-blue-600' : 'text-slate-400'}`}>
-                            <IconUsers />
-                            <span className="text-[9px] font-black uppercase">Família</span>
-                        </button>
-                    </nav>
-
-                    <button className="fixed bottom-28 right-6 bg-blue-600 text-white p-4 rounded-full shadow-2xl active:scale-90 transition-transform z-30">
-                        <IconPlus />
+                <div class="flex justify-between items-center px-2">
+                    <h3 class="font-black text-slate-800 text-xl tracking-tight">Rotina da Casa</h3>
+                    <button onclick="addTask()" class="bg-blue-50 text-blue-600 p-3 rounded-2xl active:scale-90 transition-all">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
                     </button>
                 </div>
-            );
+                
+                <div id="task-list" class="space-y-4">
+                    <!-- Dinâmico -->
+                </div>
+            </section>
+
+            <!-- PÁGINA: EDUCAÇÃO -->
+            <section id="page-edu" class="page space-y-6">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight px-1">Educação</h2>
+                <div class="bg-indigo-600 p-8 rounded-[40px] text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="text-xs font-bold opacity-70 uppercase tracking-widest">Desempenho Escolar</p>
+                        <h3 class="text-2xl font-black mt-2">João Silva • 7º Ano</h3>
+                        <div class="mt-6 space-y-4">
+                            <div class="flex justify-between text-sm font-bold">
+                                <span>Média Semestral</span>
+                                <span>8.8 / 10</span>
+                            </div>
+                            <div class="w-full bg-white/20 h-3 rounded-full overflow-hidden">
+                                <div class="bg-white h-full rounded-full" style="width: 88%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <i data-lucide="graduation-cap" class="absolute -right-8 -bottom-8 w-40 h-40 opacity-10"></i>
+                </div>
+                
+                <div class="premium-card p-6 space-y-5">
+                    <h4 class="font-black text-slate-800 flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-5 h-5 text-indigo-500"></i> Eventos Próximos
+                    </h4>
+                    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-[24px]">
+                        <div class="text-center bg-white p-3 rounded-2xl border border-slate-100 min-w-[65px] shadow-sm">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Fev</p>
+                            <p class="text-xl font-black text-slate-800 leading-none">12</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">Reunião de Pais</p>
+                            <p class="text-xs text-slate-400 font-medium">Auditório Principal • 19:00</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PÁGINA: FINANÇAS -->
+            <section id="page-finance" class="page space-y-6">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight px-1">Finanças</h2>
+                <div class="bg-slate-900 p-10 rounded-[45px] text-white shadow-2xl relative overflow-hidden text-center">
+                    <p class="text-[10px] font-black opacity-40 uppercase tracking-[0.3em]">Saldo da Família</p>
+                    <h3 class="text-4xl font-black mt-4 tracking-tighter">R$ 5.420,50</h3>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="premium-card p-6 flex flex-col items-center">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Entradas</p>
+                        <p class="text-lg font-black text-slate-700">R$ 8.200</p>
+                    </div>
+                    <div class="premium-card p-6 flex flex-col items-center">
+                        <div class="w-10 h-10 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="arrow-down-right" class="w-5 h-5"></i>
+                        </div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Saídas</p>
+                        <p class="text-lg font-black text-slate-700">R$ 2.780</p>
+                    </div>
+                </div>
+
+                <div class="premium-card p-6 space-y-5">
+                    <h3 class="font-black text-slate-800">Principais Gastos</h3>
+                    <div class="flex justify-between items-center group">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl group-active:scale-90 transition-all"><i data-lucide="home" class="w-5 h-5"></i></div>
+                            <span class="font-bold text-slate-700 text-sm tracking-tight">Aluguel / Condomínio</span>
+                        </div>
+                        <span class="font-black text-slate-800">R$ 2.200</span>
+                    </div>
+                    <div class="flex justify-between items-center group">
+                        <div class="flex items-center gap-4">
+                            <div class="p-3 bg-orange-50 text-orange-600 rounded-2xl group-active:scale-90 transition-all"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                            <span class="font-bold text-slate-700 text-sm tracking-tight">Energia Elétrica</span>
+                        </div>
+                        <span class="font-black text-slate-800">R$ 340</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PÁGINA: FAMÍLIA -->
+            <section id="page-family" class="page space-y-6">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight px-1">Família</h2>
+                <div class="bg-white p-10 rounded-[45px] border-2 border-dashed border-slate-200 text-center space-y-6">
+                    <div class="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                        <i data-lucide="user-plus" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-2xl text-slate-800 tracking-tight">Convidar Alguém</h3>
+                        <p class="text-sm text-slate-400 mt-2 px-6 font-medium leading-relaxed">Compartilhe o link e gerenciem a rotina juntos em tempo real.</p>
+                    </div>
+                    <button onclick="shareLink()" class="w-full bg-blue-600 text-white py-5 rounded-[28px] font-black shadow-xl shadow-blue-100 active:scale-95 transition-all text-lg">ENVIAR LINK</button>
+                </div>
+
+                <div class="premium-card p-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600">
+                            <i data-lucide="user" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <p id="profile-name" class="font-black text-slate-800 uppercase text-sm tracking-widest">Nome</p>
+                            <p class="text-xs text-green-500 font-bold uppercase tracking-widest mt-0.5">Usuário Ativo</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="p-4 text-rose-500 bg-rose-50 rounded-2xl active:bg-rose-100 transition-colors">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Navegação Inferior Estilo iOS -->
+        <nav class="nav-bar fixed bottom-0 w-full border-t border-slate-50 flex justify-around py-4 z-50">
+            <button onclick="showPage('home')" id="nav-home" class="nav-btn flex flex-col items-center gap-1 active">
+                <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold uppercase tracking-tighter">Início</span>
+            </button>
+            <button onclick="showPage('edu')" id="nav-edu" class="nav-btn flex flex-col items-center gap-1">
+                <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold uppercase tracking-tighter">Escola</span>
+            </button>
+            <button onclick="showPage('finance')" id="nav-finance" class="nav-btn flex flex-col items-center gap-1">
+                <i data-lucide="wallet" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold uppercase tracking-tighter">Contas</span>
+            </button>
+            <button onclick="showPage('family')" id="nav-family" class="nav-btn flex flex-col items-center gap-1">
+                <i data-lucide="users" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold uppercase tracking-tighter">Família</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // --- MOTOR DE ALTA PERFORMANCE ---
+        const state = {
+            user: localStorage.getItem('family_user'),
+            tasks: JSON.parse(localStorage.getItem('family_tasks_v3')) || [
+                { id: 1, text: 'Comprar frutas para a semana', done: false },
+                { id: 2, text: 'Pagar mensalidade do judô', done: true }
+            ]
+        };
+
+        function init() {
+            if (state.user) {
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('login-screen').classList.add('hidden');
+                
+                document.querySelectorAll('.display-name').forEach(el => el.innerText = state.user);
+                document.getElementById('profile-name').innerText = state.user;
+                document.getElementById('user-badge').innerText = state.user[0].toUpperCase();
+                
+                renderTasks();
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
+            }
+            lucide.createIcons();
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function login() {
+            const input = document.getElementById('user-input');
+            const name = input.value.trim();
+            if (name.length > 1) {
+                localStorage.setItem('family_user', name);
+                state.user = name;
+                init();
+            } else {
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '#f1f5f9', 1000);
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+            const targetPage = document.getElementById('page-' + pageId);
+            const targetNav = document.getElementById('nav-' + pageId);
+            
+            if(targetPage && targetNav) {
+                targetPage.classList.add('active');
+                targetNav.classList.add('active');
+                lucide.createIcons();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            const stat = document.getElementById('stat-tasks');
+            
+            if (state.tasks.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 opacity-20 font-black italic">Sem tarefas pendentes</div>`;
+            } else {
+                container.innerHTML = state.tasks.map(task => `
+                    <div class="premium-card p-5 flex items-center gap-4 transition-all active:scale-[0.98]">
+                        <div onclick="toggleTask(${task.id})" class="task-checkbox ${task.done ? 'task-checked' : ''}">
+                            ${task.done ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                        </div>
+                        <span class="flex-1 text-sm font-bold tracking-tight ${task.done ? 'text-slate-300 line-through' : 'text-slate-700'}">
+                            ${task.text}
+                        </span>
+                        <button onclick="deleteTask(${task.id})" class="p-2 text-slate-200 active:text-rose-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+            
+            stat.innerText = state.tasks.filter(t => !t.done).length;
+            lucide.createIcons();
+            localStorage.setItem('family_tasks_v3', JSON.stringify(state.tasks));
+        }
+
+        function addTask() {
+            const text = prompt("O que precisamos fazer?");
+            if (text && text.trim()) {
+                state.tasks.unshift({ id: Date.now(), text: text.trim(), done: false });
+                renderTasks();
+            }
+        }
+
+        function toggleTask(id) {
+            state.tasks = state.tasks.map(t => t.id === id ? {...t, done: !t.done} : t);
+            renderTasks();
+        }
+
+        function deleteTask(id) {
+            state.tasks = state.tasks.filter(t => t.id !== id);
+            renderTasks();
+        }
+
+        function shareLink() {
+            const url = window.location.origin + window.location.pathname;
+            if (navigator.share) {
+                navigator.share({ title: 'FamilyHub', text: 'Vem gerenciar nossa casa comigo!', url });
+            } else {
+                navigator.clipboard.writeText(url);
+                alert("Link de convite copiado!");
+            }
+        }
+
+        // Bloquear refresh de puxar para baixo no mobile indesejado
+        window.onload = init;
     </script>
 </body>
 </html>
-
-
 
